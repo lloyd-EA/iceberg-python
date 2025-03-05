@@ -2471,6 +2471,7 @@ def parquet_files_to_data_files(io: FileIO, table_metadata: TableMetadata, file_
 
 
 def parquet_file_to_data_file(io: FileIO, table_metadata: TableMetadata, file_path: str) -> DataFile:
+    from pyiceberg.table import DOWNCAST_NS_TIMESTAMP_TO_US_ON_WRITE
     input_file = io.new_input(file_path)
     with input_file.open() as input_stream:
         parquet_metadata = pq.read_metadata(input_stream)
@@ -2482,7 +2483,8 @@ def parquet_file_to_data_file(io: FileIO, table_metadata: TableMetadata, file_pa
         )
 
     schema = table_metadata.schema()
-    _check_pyarrow_schema_compatible(schema, arrow_schema)
+    downcast_ns_timestamp_to_us = Config().get_bool(DOWNCAST_NS_TIMESTAMP_TO_US_ON_WRITE) or False
+    _check_pyarrow_schema_compatible(schema, arrow_schema, downcast_ns_timestamp_to_us)
 
     statistics = data_file_statistics_from_parquet_metadata(
         parquet_metadata=parquet_metadata,
